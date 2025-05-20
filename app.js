@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Map tool names to YouTube video IDs
+// Map tool names to YouTube video IDs - expanded to include all tools
 const toolVideoMap = {
     "Chef's Knife": "FNuV7lg6jgg",
     "Mandoline Slicer": "IBMqYNonPJM",
@@ -80,16 +80,34 @@ const toolVideoMap = {
     "Food Processor": "7vUDk-UK74Q",
     "Electric Mixer": "b4ezir4DRPQ",
     "Air Fryer": "_M9_BvScgtk",
-    "Pressure Cooker": "TMVASUwVAPU",
+    "Pressure Cooker": "7ztF31OdOYc",
     "Slow Cooker": "L2cqWmthbz8",
     "Digital Scale": "Zxu0T3RNkKI",
     "Measuring Cups and Spoons": "tfPAp1gmD9c",
-    "Meat Thermometer": "I8DZlyvL2tI",
-    "Cast Iron Skillet": "3I4RMUzF3vE",
+    "Meat Thermometer": "rtDp1nyXquY",
+    "Cast Iron Skillet": "KLGSLCaksdY",
     "Stand Mixer": "1021zdjwoq0",
     "Non-stick Pan": "L2cqWmthbz8",
-    "Dutch Oven": "_M9_BvScgtk"
+    "Dutch Oven": "_M9_BvScgtk",
+    "Garlic Press": "6c5RrLGVIgg",
+    "Vegetable Peeler": "RhlmtQhgknQ",
+    "Can Opener": "CZ9GgjH0o5U",
+    "Box Grater": "VQbBDpS3WJQ",
+    "Colander": "1QKBGDLWBHU",
+    "Salad Spinner": "mQWsK_fTlYg",
+    "Pastry Blender": "0Eiu_D0WJlE",
+    "Rolling Pin": "2HB_Kt0rNpc",
+    "Silicone Baking Mat": "dKLmwGbT0Dk",
+    "Food Storage Containers": "C1aB2SJKY6E",
+    "Kitchen Drawer Organizers": "J1LrG8xnhPw",
+    "Spice Rack": "4yf-X9b2IQ4",
+    "Oven Mitts": "KUzLR6_kf0g",
+    "Cut-Resistant Gloves": "9-4MrEI3XUo",
+    "Kitchen Fire Extinguisher": "Ww56K9TFUKI"
 };
+
+// Default video ID for any tools without specific videos
+const DEFAULT_VIDEO_ID = "7vUDk-UK74Q"; // Food processor video as default
 
 // DOM Elements
 const searchInput = document.getElementById('search-input');
@@ -309,7 +327,9 @@ function displayCategories(categories) {
     categories.forEach(category => {
         const li = document.createElement('li');
         li.innerHTML = `${getCategoryIcon(category)} ${category}`;
-        li.classList.add(currentCategory === category ? 'active' : '');
+        if(currentCategory === category) {
+            li.classList.add('active');
+        }
         li.addEventListener('click', () => filterByCategory(category));
         categoryList.appendChild(li);
     });
@@ -421,8 +441,10 @@ function filterByCategory(category) {
         });
 }
 
-// Update category selection in sidebar
+    // Update category selection in sidebar
 function updateCategorySelection() {
+    if (!categoryList) return;
+    
     const categoryItems = categoryList.querySelectorAll('li');
     categoryItems.forEach(item => {
         item.classList.remove('active');
@@ -604,7 +626,7 @@ function openToolDetails(id) {
         });
 }
 
-// Display tool modal
+    // Display tool modal
 function displayToolModal(data) {
     if (!toolModal || !toolDetails) return;
     
@@ -618,88 +640,7 @@ function displayToolModal(data) {
     // Create category badge
     let categoryBadge = `<span class="category-badge ${categoryClass}">${getCategoryIcon(tool.category)} ${tool.category}</span>`;
     
-    // Create video tutorial section if available
-    let videoHTML = '';
-    const videoId = toolVideoMap[tool.name];
-    if (videoId) {
-        videoHTML = `
-            <div class="video-header">
-                <i class="fas fa-video"></i> Video Tutorial
-            </div>
-            <div class="video-container">
-                <iframe 
-                    width="100%" 
-                    height="315" 
-                    src="https://www.youtube.com/embed/${videoId}" 
-                    title="${tool.name} Tutorial" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowfullscreen>
-                </iframe>
-            </div>
-        `;
-    }
-    
-    let recipeHTML = '';
-    if (recipes.length > 0) {
-        recipeHTML = `
-            <div class="tool-details-section recipes-section">
-                <h3><i class="fas fa-utensil-spoon"></i> Recipes Using This Tool</h3>
-                <div class="recipes-list">
-                    ${recipes.map(recipe => `
-                        <div class="recipe-card">
-                            <h4>${recipe.name}</h4>
-                            <div class="recipe-content">
-                                <div class="ingredients">
-                                    <h5>Ingredients</h5>
-                                    <p>${recipe.ingredients}</p>
-                                </div>
-                                <div class="instructions">
-                                    <h5>Instructions</h5>
-                                    <ol>
-                                        ${recipe.instructions
-                                            .split('\n')
-                                            .map(step => step.trim())
-                                            .filter(step => step)
-                                            .map(step => {
-                                                // Remove numbering if it exists
-                                                return `<li>${step.replace(/^\d+\.\s*/, '')}</li>`;
-                                            })
-                                            .join('')
-                                        }
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }
-    
-    let troubleshootingHTML = '';
-    if (troubleshooting.length > 0) {
-        troubleshootingHTML = `
-            <div class="tool-details-section troubleshooting-section">
-                <h3><i class="fas fa-wrench"></i> Troubleshooting Tips</h3>
-                <div class="troubleshooting-list">
-                    ${troubleshooting.map(tip => `
-                        <div class="troubleshooting-card">
-                            <div class="problem">
-                                <h5><i class="fas fa-exclamation-circle"></i> Problem</h5>
-                                <p>${tip.problem}</p>
-                            </div>
-                            <div class="solution">
-                                <h5><i class="fas fa-check-circle"></i> Solution</h5>
-                                <p>${tip.solution}</p>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }
-    
+    // Build basic structure first
     toolDetails.innerHTML = `
         <div class="tool-header">
             <div class="tool-image-container">
@@ -720,7 +661,6 @@ function displayToolModal(data) {
                 <h3><i class="fas fa-book"></i> How to Use</h3>
                 <div class="usage-instructions">
                     <p>${tool.usage_instructions || 'No usage instructions available.'}</p>
-                    ${videoHTML}
                 </div>
             </div>
             
@@ -740,11 +680,94 @@ function displayToolModal(data) {
             </div>
             ` : ''}
         </div>
-        
-        ${recipeHTML}
-        
-        ${troubleshootingHTML}
     `;
+    
+    // Get video ID for this tool or use default
+    let videoId = toolVideoMap[tool.name];
+    if (!videoId) {
+        videoId = DEFAULT_VIDEO_ID;
+    }
+    
+    // Create video section separately to avoid rendering issues
+    const videoSection = document.createElement('div');
+    videoSection.className = 'tool-details-section video-section';
+    videoSection.innerHTML = `
+        <h3><i class="fas fa-video"></i> Watch Demonstration Video</h3>
+        <div class="video-container">
+            <iframe 
+                width="100%" 
+                height="315" 
+                src="https://www.youtube.com/embed/${videoId}" 
+                title="${tool.name} Tutorial" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen>
+            </iframe>
+        </div>
+    `;
+    toolDetails.appendChild(videoSection);
+    
+    // Add recipes section if available
+    if (recipes.length > 0) {
+        const recipesSection = document.createElement('div');
+        recipesSection.className = 'tool-details-section recipes-section';
+        recipesSection.innerHTML = `
+            <h3><i class="fas fa-utensil-spoon"></i> Recipes Using This Tool</h3>
+            <div class="recipes-list">
+                ${recipes.map(recipe => `
+                    <div class="recipe-card">
+                        <h4>${recipe.name}</h4>
+                        <div class="recipe-content">
+                            <div class="ingredients">
+                                <h5>Ingredients</h5>
+                                <p>${recipe.ingredients}</p>
+                            </div>
+                            <div class="instructions">
+                                <h5>Instructions</h5>
+                                <ol>
+                                    ${recipe.instructions
+                                        .split('\n')
+                                        .map(step => step.trim())
+                                        .filter(step => step)
+                                        .map(step => {
+                                            // Remove numbering if it exists
+                                            return `<li>${step.replace(/^\d+\.\s*/, '')}</li>`;
+                                        })
+                                        .join('')
+                                    }
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        toolDetails.appendChild(recipesSection);
+    }
+    
+    // Add troubleshooting section if available
+    if (troubleshooting.length > 0) {
+        const troubleshootingSection = document.createElement('div');
+        troubleshootingSection.className = 'tool-details-section troubleshooting-section';
+        troubleshootingSection.innerHTML = `
+            <h3><i class="fas fa-wrench"></i> Troubleshooting Tips</h3>
+            <div class="troubleshooting-list">
+                ${troubleshooting.map(tip => `
+                    <div class="troubleshooting-card">
+                        <div class="problem">
+                            <h5><i class="fas fa-exclamation-circle"></i> Problem</h5>
+                            <p>${tip.problem}</p>
+                        </div>
+                        <div class="solution">
+                            <h5><i class="fas fa-check-circle"></i> Solution</h5>
+                            <p>${tip.solution}</p>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        toolDetails.appendChild(troubleshootingSection);
+    }
     
     toolModal.style.display = 'block';
     document.body.style.overflow = 'hidden';
