@@ -84,8 +84,8 @@ const toolVideoMap = {
     "Slow Cooker": "L2cqWmthbz8",
     "Digital Scale": "Zxu0T3RNkKI",
     "Measuring Cups and Spoons": "tfPAp1gmD9c",
-    "Meat Thermometer": "rtDp1nyXquY",
-    "Cast Iron Skillet": "KLGSLCaksdY",
+    "Meat Thermometer": "id-ELcWR8_c",
+    "Cast Iron Skillet": "cnDtbbHB5VM",
     "Stand Mixer": "1021zdjwoq0",
     "Non-stick Pan": "L2cqWmthbz8",
     "Dutch Oven": "_M9_BvScgtk",
@@ -136,42 +136,56 @@ let categories = [];
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', init);
-searchButton.addEventListener('click', performSearch);
-searchInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        performSearch();
-    }
-});
 
-// Real-time search
-searchInput.addEventListener('input', function() {
-    const query = this.value.trim();
-    
-    if (query.length > 1) {
-        // Perform real-time search
-        fetch('api.php?action=search_tools&query=' + encodeURIComponent(query))
-            .then(response => response.json())
-            .then(tools => {
-                displaySearchResults(tools, query);
-            })
-            .catch(error => {
-                console.error('Error searching tools:', error);
-                // Search locally if API fails
-                const searchResults = allTools.filter(tool => 
-                    tool.name.toLowerCase().includes(query.toLowerCase()) || 
-                    tool.category.toLowerCase().includes(query.toLowerCase()) ||
-                    (tool.description && tool.description.toLowerCase().includes(query.toLowerCase()))
-                );
-                displaySearchResults(searchResults, query);
-            });
-    } else {
-        // Clear search results if query is too short
-        if (searchResults) {
-            searchResults.innerHTML = '';
-            searchResults.style.display = 'none';
+// FIX: Update search button event listener to ensure it works on mobile
+if (searchButton) {
+    searchButton.addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent any default form submission
+        console.log('Search button clicked'); // Debug log
+        performSearch();
+    });
+}
+
+// FIX: Update search input event listener for Enter key
+if (searchInput) {
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            console.log('Enter key pressed in search input'); // Debug log
+            performSearch();
         }
-    }
-});
+    });
+
+    // Real-time search
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        if (query.length > 1) {
+            // Perform real-time search
+            fetch('api.php?action=search_tools&query=' + encodeURIComponent(query))
+                .then(response => response.json())
+                .then(tools => {
+                    displaySearchResults(tools, query);
+                })
+                .catch(error => {
+                    console.error('Error searching tools:', error);
+                    // Search locally if API fails
+                    const searchResults = allTools.filter(tool => 
+                        tool.name.toLowerCase().includes(query.toLowerCase()) || 
+                        tool.category.toLowerCase().includes(query.toLowerCase()) ||
+                        (tool.description && tool.description.toLowerCase().includes(query.toLowerCase()))
+                    );
+                    displaySearchResults(searchResults, query);
+                });
+        } else {
+            // Clear search results if query is too short
+            if (searchResults) {
+                searchResults.innerHTML = '';
+                searchResults.style.display = 'none';
+            }
+        }
+    });
+}
 
 // Hide search results when clicking outside
 document.addEventListener('click', function(e) {
@@ -441,7 +455,7 @@ function filterByCategory(category) {
         });
 }
 
-    // Update category selection in sidebar
+// Update category selection in sidebar
 function updateCategorySelection() {
     if (!categoryList) return;
     
@@ -456,19 +470,42 @@ function updateCategorySelection() {
     });
 }
 
-// Perform search
+// FIX: Improved search function with better error handling and loading states
 function performSearch() {
+    if (!searchInput) return;
+    
     const query = searchInput.value.trim();
     if (!query) return;
+    
+    console.log('Performing search for:', query); // Debug log
     
     // Hide search results dropdown
     if (searchResults) {
         searchResults.style.display = 'none';
     }
     
+    // Show loading state
+    if (searchButton) {
+        const originalText = searchButton.innerHTML;
+        searchButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+        searchButton.disabled = true;
+        
+        // Restore button after delay even if fetch fails completely
+        setTimeout(() => {
+            if (searchButton.disabled) {
+                searchButton.innerHTML = originalText;
+                searchButton.disabled = false;
+            }
+        }, 5000);
+    }
+    
     fetch('api.php?action=search_tools&query=' + encodeURIComponent(query))
-        .then(response => response.json())
+        .then(response => {
+            console.log('Search API response received'); // Debug log
+            return response.json();
+        })
         .then(tools => {
+            console.log('Found', tools.length, 'tools matching search'); // Debug log
             currentTools = tools;
             currentCategory = '';
             updateCategorySelection();
@@ -477,13 +514,21 @@ function performSearch() {
         .catch(error => {
             console.error('Error searching tools:', error);
             // Search locally if API fails
-            const searchResults = allTools.filter(tool => 
+            const localResults = allTools.filter(tool => 
                 tool.name.toLowerCase().includes(query.toLowerCase()) || 
                 tool.category.toLowerCase().includes(query.toLowerCase()) ||
                 (tool.description && tool.description.toLowerCase().includes(query.toLowerCase()))
             );
-            currentTools = searchResults;
-            displayTools(searchResults);
+            console.log('Fallback local search found', localResults.length, 'results'); // Debug log
+            currentTools = localResults;
+            displayTools(localResults);
+        })
+        .finally(() => {
+            // Reset button state
+            if (searchButton) {
+                searchButton.innerHTML = '<i class="fas fa-search"></i> Search';
+                searchButton.disabled = false;
+            }
         });
 }
 
@@ -626,7 +671,7 @@ function openToolDetails(id) {
         });
 }
 
-    // Display tool modal
+// Display tool modal
 function displayToolModal(data) {
     if (!toolModal || !toolDetails) return;
     
