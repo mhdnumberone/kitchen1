@@ -71,9 +71,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Map tool names to YouTube video IDs
+const toolVideoMap = {
+    "Chef's Knife": "FNuV7lg6jgg",
+    "Mandoline Slicer": "IBMqYNonPJM",
+    "Kitchen Shears": "tfPAp1gmD9c",
+    "Immersion Blender": "mvp7ejxYK98",
+    "Food Processor": "7vUDk-UK74Q",
+    "Electric Mixer": "b4ezir4DRPQ",
+    "Air Fryer": "_M9_BvScgtk",
+    "Pressure Cooker": "TMVASUwVAPU",
+    "Slow Cooker": "L2cqWmthbz8",
+    "Digital Scale": "Zxu0T3RNkKI",
+    "Measuring Cups and Spoons": "tfPAp1gmD9c",
+    "Meat Thermometer": "I8DZlyvL2tI",
+    "Cast Iron Skillet": "3I4RMUzF3vE",
+    "Stand Mixer": "1021zdjwoq0",
+    "Non-stick Pan": "L2cqWmthbz8",
+    "Dutch Oven": "_M9_BvScgtk"
+};
+
 // DOM Elements
 const searchInput = document.getElementById('search-input');
 const searchButton = document.getElementById('search-button');
+const searchResults = document.getElementById('search-results');
 const categoryList = document.getElementById('category-list');
 const toolsGrid = document.getElementById('tools-grid');
 const toolModal = document.getElementById('tool-modal');
@@ -101,6 +122,43 @@ searchButton.addEventListener('click', performSearch);
 searchInput.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         performSearch();
+    }
+});
+
+// Real-time search
+searchInput.addEventListener('input', function() {
+    const query = this.value.trim();
+    
+    if (query.length > 1) {
+        // Perform real-time search
+        fetch('api.php?action=search_tools&query=' + encodeURIComponent(query))
+            .then(response => response.json())
+            .then(tools => {
+                displaySearchResults(tools, query);
+            })
+            .catch(error => {
+                console.error('Error searching tools:', error);
+                // Search locally if API fails
+                const searchResults = allTools.filter(tool => 
+                    tool.name.toLowerCase().includes(query.toLowerCase()) || 
+                    tool.category.toLowerCase().includes(query.toLowerCase()) ||
+                    (tool.description && tool.description.toLowerCase().includes(query.toLowerCase()))
+                );
+                displaySearchResults(searchResults, query);
+            });
+    } else {
+        // Clear search results if query is too short
+        if (searchResults) {
+            searchResults.innerHTML = '';
+            searchResults.style.display = 'none';
+        }
+    }
+});
+
+// Hide search results when clicking outside
+document.addEventListener('click', function(e) {
+    if (searchResults && e.target !== searchInput && !searchResults.contains(e.target)) {
+        searchResults.style.display = 'none';
     }
 });
 
@@ -152,6 +210,68 @@ function init() {
     loadAllTools();
     loadRecentTools();
     loadPopularTools();
+}
+
+// Display search results in real-time
+function displaySearchResults(tools, query) {
+    if (!searchResults) return;
+    
+    // Clear previous results
+    searchResults.innerHTML = '';
+    
+    if (tools.length === 0) {
+        searchResults.style.display = 'none';
+        return;
+    }
+    
+    // Create results list
+    const ul = document.createElement('ul');
+    
+    // Limit to 5 results to keep dropdown manageable
+    const displayLimit = Math.min(tools.length, 5);
+    
+    for (let i = 0; i < displayLimit; i++) {
+        const tool = tools[i];
+        const li = document.createElement('li');
+        
+        // Highlight matching text in name
+        let name = tool.name;
+        if (query && name.toLowerCase().includes(query.toLowerCase())) {
+            const regex = new RegExp(`(${query})`, 'gi');
+            name = name.replace(regex, '<strong>$1</strong>');
+        }
+        
+        let categoryClass = getCategoryClass(tool.category);
+        
+        li.innerHTML = `
+            <span class="search-result-name">${name}</span>
+            <span class="search-result-category ${categoryClass}">${tool.category}</span>
+        `;
+        
+        li.addEventListener('click', () => {
+            openToolDetails(tool.id);
+            searchResults.style.display = 'none';
+            searchInput.value = tool.name;
+        });
+        
+        ul.appendChild(li);
+    }
+    
+    // Show "View all results" if more than the display limit
+    if (tools.length > displayLimit) {
+        const viewAll = document.createElement('li');
+        viewAll.className = 'view-all-results';
+        viewAll.innerHTML = `View all ${tools.length} results`;
+        viewAll.addEventListener('click', () => {
+            searchInput.value = query;
+            performSearch();
+            searchResults.style.display = 'none';
+        });
+        ul.appendChild(viewAll);
+    }
+    
+    searchResults.appendChild(ul);
+    searchResults.style.display = 'block';
 }
 
 // Load categories
@@ -318,6 +438,11 @@ function updateCategorySelection() {
 function performSearch() {
     const query = searchInput.value.trim();
     if (!query) return;
+    
+    // Hide search results dropdown
+    if (searchResults) {
+        searchResults.style.display = 'none';
+    }
     
     fetch('api.php?action=search_tools&query=' + encodeURIComponent(query))
         .then(response => response.json())
@@ -493,6 +618,28 @@ function displayToolModal(data) {
     // Create category badge
     let categoryBadge = `<span class="category-badge ${categoryClass}">${getCategoryIcon(tool.category)} ${tool.category}</span>`;
     
+    // Create video tutorial section if available
+    let videoHTML = '';
+    const videoId = toolVideoMap[tool.name];
+    if (videoId) {
+        videoHTML = `
+            <div class="video-header">
+                <i class="fas fa-video"></i> Video Tutorial
+            </div>
+            <div class="video-container">
+                <iframe 
+                    width="100%" 
+                    height="315" 
+                    src="https://www.youtube.com/embed/${videoId}" 
+                    title="${tool.name} Tutorial" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            </div>
+        `;
+    }
+    
     let recipeHTML = '';
     if (recipes.length > 0) {
         recipeHTML = `
@@ -573,6 +720,7 @@ function displayToolModal(data) {
                 <h3><i class="fas fa-book"></i> How to Use</h3>
                 <div class="usage-instructions">
                     <p>${tool.usage_instructions || 'No usage instructions available.'}</p>
+                    ${videoHTML}
                 </div>
             </div>
             
