@@ -1022,18 +1022,36 @@ footer {
     }
 }
 
+/* FIX: Improved mobile search box styling */
 @media (max-width: 576px) {
     .search-box {
         flex-direction: column;
+        width: 100%;
     }
     
     .search-box input {
         border-radius: 25px;
         margin-bottom: 0.5rem;
+        width: 100%;
     }
     
     .search-box button {
         border-radius: 25px;
+        width: 100%;
+        padding: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1rem;
+        font-weight: 500;
+        /* Enhanced tap target for mobile */
+        min-height: 44px;
+    }
+    
+    /* Increase tap target size for better mobile experience */
+    .search-box button i {
+        margin-right: 8px;
+        font-size: 1.1rem;
     }
     
     #tools-grid, .tools-mini-grid {
@@ -1049,6 +1067,7 @@ footer {
     .modal-content {
         width: 95%;
         padding: 20px 15px;
+        margin: 2% auto;
     }
     
     #search-results li {
@@ -1062,5 +1081,11 @@ footer {
     
     .video-container {
         padding-top: 75%; /* Slightly taller for better mobile viewing */
+    }
+    
+    /* Add active state styling for better feedback on mobile */
+    .search-box button:active {
+        background-color: #4CAF50;
+        transform: translateY(2px);
     }
 }
