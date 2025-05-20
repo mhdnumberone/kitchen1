@@ -28,6 +28,8 @@ if (!$is_logged_in) {
             <div class="search-box">
                 <input type="text" id="search-input" placeholder="Search for tools, appliances, or categories...">
                 <button id="search-button"><i class="fas fa-search"></i> Search</button>
+                <!-- Real-time search results container -->
+                <div id="search-results"></div>
             </div>
             <div class="user-info">
                 <span>Welcome, <?php echo htmlspecialchars($_SESSION["username"]); ?></span>
